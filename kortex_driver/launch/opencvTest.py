@@ -10,7 +10,7 @@ subscriberNode = 'rishik_opencv'
 topicName = '/my_gen3/camera_image/compressed'
 
 def imageCallback(msg):
-    print("rcv frame")
+    # print("rcv frame")
     bridgeObj = CvBridge()
     convertedFrame = bridgeObj.compressed_imgmsg_to_cv2(msg, desired_encoding='rgb8')
     # print(convertedFrame)
