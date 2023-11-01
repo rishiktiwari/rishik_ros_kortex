@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 import rospy
-from std_msgs.msg import String
+from sensor_msgs.msg import JointState
 
-def callback(data):
-    #rospy.loginfo(rospy.get_caller_id() + 'I heard %s', data.data)
-    print('hello')
+def callback(msg):
+    print(msg)
 
 def listener():
 
@@ -16,7 +15,7 @@ def listener():
     # run simultaneously.
     rospy.init_node('py_listener', anonymous=True)
 
-    rospy.Subscriber('/my_gen3_lite/joint_states', String, callback)
+    rospy.Subscriber('/my_gen3/joint_states', JointState, callback)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()

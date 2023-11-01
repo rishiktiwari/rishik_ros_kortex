@@ -182,7 +182,7 @@ class movTest:
 
         if success:
             success &= self.example_clear_faults()
-            # success &= self.example_home_the_robot()
+            success &= self.example_home_the_robot()
             success &= self.example_set_cartesian_reference_frame()
             success &= self.example_subscribe_to_a_robot_notification()
 
@@ -251,7 +251,7 @@ class movTest:
         # rospy.set_param(result_topic, success)
 
         if not success:
-            rospy.logerr("The example encountered an error.")
+            rospy.logerr("The program encountered an error.")
 
 if __name__ == "__main__":
     ex = movTest()
