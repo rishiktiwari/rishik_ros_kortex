@@ -289,13 +289,13 @@
           <sensor name="camera" type="camera">
             <pose> 0 0 0 0 0 0 </pose>
             <visualize>true</visualize>
-            <update_rate>30</update_rate>
+            <update_rate>15</update_rate>
             <camera>
               <horizontal_fov>1.0821</horizontal_fov> <!-- FROM KINOVA MANUAL, pg 24 -->
               <image>
                 <format>R8G8B8</format>
-                <width>1280</width>
-                <height>720</height>
+                <width>640</width>
+                <height>480</height>
               </image>
               <clip>
                 <near>0.03</near>
@@ -340,10 +340,10 @@
 
         <gazebo reference="rishik_dcamera_link">
           <material>Gazebo/Blue</material>
-          <sensor name="openni_camera_camera" type="depth">
+          <sensor name="depth_camera" type="depth">
             <always_on>1</always_on>
             <visualize>true</visualize>
-            <update_rate>30</update_rate>
+            <update_rate>15</update_rate>
             <pose> 0 0 0 0 0 0 </pose>
             <camera>
               <horizontal_fov>1.29154</horizontal_fov> <!-- FROM KINOVA MANUAL, pg 25 -->
@@ -365,15 +365,15 @@
             <plugin name="kinect" filename="libgazebo_ros_openni_kinect.so">
               <frameName>rishik_dcamera_link/rishik_dcamera_link_optical</frameName>
               <cameraName>camera/depth</cameraName>
-              <imageTopicName>image_raw</imageTopicName>
-              <depthImageTopicName>image</depthImageTopicName>
+              <imageTopicName>rgb_image</imageTopicName>
+              <depthImageTopicName>image_raw</depthImageTopicName>
               <depthImageCameraInfoTopicName>camera_info</depthImageCameraInfoTopicName>
               <pointCloudTopicName>points</pointCloudTopicName>
-              <alwaysOn>true</alwaysOn>
-              <updateRate>30.0</updateRate>
               <pointCloudCutoff>0.18</pointCloudCutoff>
               <pointCloudCutoffMax>1.5</pointCloudCutoffMax>
               <focalLength>0.0</focalLength>
+              <alwaysOn>true</alwaysOn>
+              <updateRate>0</updateRate>
               <!-- <CxPrime>0</CxPrime> -->
               <!-- <distortionK1>0.00000001</distortionK1>
               <distortionK2>0.00000001</distortionK2>

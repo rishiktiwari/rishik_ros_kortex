@@ -11,15 +11,15 @@ from time import time
 subscriberNode = 'rishik_opencv'
 # topicName = '/my_gen3/camera_republished/compressed' # may not be required for sim
 # topicName = '/my_gen3/camera_image/compressed'
-topicName = '/my_gen3/camera/color/image_raw/compressed'    # For Sim Arm - color
-# topicName = '/camera/color/image_raw/compressed'          # For Real Arm
+# topicName = '/my_gen3/camera/color/image_raw/compressed'    # For Sim Arm - color
+topicName = '/camera/color/image_raw/compressed'          # For Real Arm
 
 # client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, int(10e6))
 
-host_ip = '192.168.1.104' # MBP addr
-# host_ip = '192.168.1.100' # MBP addr
+# host_ip = '192.168.1.104' # MBP addr
+host_ip = '192.168.1.100' # MBP addr
 port = 9999
 client_socket.connect((host_ip,port))
 

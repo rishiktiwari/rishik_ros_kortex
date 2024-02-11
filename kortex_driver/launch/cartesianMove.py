@@ -126,6 +126,7 @@ class movTest:
         # Wait a bit
         rospy.sleep(0.25)
 
+
     def example_subscribe_to_a_robot_notification(self):
         # Activate the publishing of the ActionNotification
         req = OnNotificationActionTopicRequest()
@@ -142,8 +143,8 @@ class movTest:
 
         return True
     
-    '''
-    def send_gripper_command(self, value):
+
+    def actuate_gripper(self, value):
         # Initialize the request
         # Close the gripper
 
@@ -168,7 +169,7 @@ class movTest:
             return False
         else:
             return True
-    '''
+
 
     def main(self):
         # For testing purposes
@@ -182,7 +183,7 @@ class movTest:
 
         if success:
             success &= self.example_clear_faults()
-            success &= self.example_home_the_robot()
+            # success &= self.example_home_the_robot()
             success &= self.example_set_cartesian_reference_frame()
             success &= self.example_subscribe_to_a_robot_notification()
 
@@ -204,15 +205,15 @@ class movTest:
                     px = float(input("\npose X: "))
                     py = float(input("pose Y: "))
                     pz = float(input("pose Z: "))
-                    # gripperVal = input("\nGripper Position: ")
+                    gripperVal = input("\nGripper Position [0-open]: ")
 
                     if(((px**2) + (py**2) + (pz**2))**0.5 >= 0.9):
                         print("Infeasible pose, try again")
                         continue
 
-                    # if(gripperVal != ''):
-                    #     gripperVal = float(gripperVal)
-                    #     self.send_gripper_command(gripperVal)
+                    if(gripperVal != ''):
+                        self.actuate_gripper(float(gripperVal))
+                        time.sleep(1) # required for action to complete
 
                     my_constrained_pose.target_pose.x = px
                     my_constrained_pose.target_pose.y = py
@@ -246,6 +247,7 @@ class movTest:
             except KeyboardInterrupt:
                 print('Terminating...')
                 pass
+
 
         # For testing purposes
         # rospy.set_param(result_topic, success)
