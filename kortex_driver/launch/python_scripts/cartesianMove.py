@@ -195,6 +195,8 @@ class movTest:
             my_constrained_pose = ConstrainedPose()
             my_constrained_pose.constraint.oneof_type.speed.append(my_cartesian_speed)
 
+            lastGripperVal = 0
+
             poseId = 1
             try:
                 while True:
@@ -202,18 +204,19 @@ class movTest:
                     if(shouldQuit.lower() == 'quit'):
                         break
 
-                    px = float(input("\npose X: "))
-                    py = float(input("pose Y: "))
-                    pz = float(input("pose Z: "))
-                    gripperVal = input("\nGripper Position [0-open]: ")
+                    px = float(input("\npose X ("+ str(my_constrained_pose.target_pose.x) +"): ") or my_constrained_pose.target_pose.x)
+                    py = float(input("pose Y ("+ str(my_constrained_pose.target_pose.y) +"): ") or my_constrained_pose.target_pose.y)
+                    pz = float(input("pose Z ("+ str(my_constrained_pose.target_pose.z) +"): ") or my_constrained_pose.target_pose.z)
+                    gripperVal = float(input("\nGripper [0-open] ("+ str(lastGripperVal) +"): ") or lastGripperVal)
 
                     if(((px**2) + (py**2) + (pz**2))**0.5 >= 0.9):
                         print("Infeasible pose, try again")
                         continue
-
-                    if(gripperVal != ''):
-                        self.actuate_gripper(float(gripperVal))
-                        time.sleep(1) # required for action to complete
+                    
+                    # actuate the gripper
+                    self.actuate_gripper(gripperVal)
+                    lastGripperVal = gripperVal
+                    time.sleep(1) # awaits action complete notification
 
                     my_constrained_pose.target_pose.x = px
                     my_constrained_pose.target_pose.y = py

@@ -4,11 +4,11 @@
 This script starts the TCP server to stream RGB, Depth image and joint states to client.
 '''
 
-import rospy
-from sensor_msgs.msg import Image, CompressedImage, JointState
+import rospy, message_filters, json
+from sensor_msgs.msg import Image, JointState
 from cv_bridge import CvBridge
 import cv2 as cv    # opencv version 3.4.0.14
-from numpy import uint8 as np_uint8
+import numpy as np
 import pickle, socket, threading, sys, math
 from time import time, sleep
 
@@ -17,42 +17,40 @@ from time import time, sleep
 RGB_HOST_ADDR = ('0.0.0.0', 9999)
 DEPTH_HOST_ADDR = ('0.0.0.0', 9998)
 DATA_HOST_ADDR = ('0.0.0.0', 9997)
-NUM_OF_SOCKETS = 2
+NUM_OF_SOCKETS = 1
 # MAX_BUF_SIZE = 8192
 
 
 rospy.init_node('rishik_socketstreamer', anonymous=True)
 
 JOINT_STATE_TOPIC = '/my_gen3/joint_states'
-# COLOR_CAMERA_TOPIC = '/my_gen3/camera_republished/compressed'      # may not be required for sim
-# COLOR_CAMERA_TOPIC = '/my_gen3/camera_image/compressed'
 
-COLOR_CAMERA_TOPIC = '/my_gen3/camera/color/image_raw/compressed'    # For Sim Arm - color
-# COLOR_CAMERA_TOPIC = '/camera/color/image_raw/compressed'          # For Real Arm
+# COLOR_CAMERA_TOPIC = '/my_gen3/camera/color/image_raw'    # For Sim Arm - color
+COLOR_CAMERA_TOPIC = '/camera/color/image_raw'              # For Real Arm
 
-DEPTH_CAMERA_TOPIC = '/my_gen3/camera/depth/image_raw'    # For Sim Arm - depth
-# DEPTH_CAMERA_TOPIC = '/camera/depth/image_raw'          # For Real Arm
+# DEPTH_CAMERA_TOPIC = '/my_gen3/camera/depth/image_raw'    # For Sim Arm - depth
+DEPTH_CAMERA_TOPIC = '/camera/depth/image'                  # For Real Arm
 
 video_client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-video_client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, int(10e6))
+# video_client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, int(10e6))
 
 depth_client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-depth_client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, int(10e6))
+# depth_client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, int(10e6))
 
 client_addr_rgb = None      # for RGB stream
 client_addr_depth = None    # for Depth stream
 data_client_socket = None   # for data stream
+isRunning = True
 
 
 
 def sendVideoFrame(msg):
     bridgeObj = CvBridge()
-    convertedFrame = bridgeObj.compressed_imgmsg_to_cv2(msg, desired_encoding='bgr8')
-    # convertedFrame = convertedFrame[120:600, 320:960] # crop and resize 720x1280 to 480x640, yes it is HxW
-    # convertedFrame = cv.resize(convertedFrame, (640,480))
+    convertedFrame = bridgeObj.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+    convertedFrame = cv.resize(convertedFrame, (320, 240))
     # cv.putText(convertedFrame, str(int(time())), (530,465), cv.FONT_HERSHEY_SIMPLEX, 0.35, (255,255,255), 1, cv.LINE_AA)
     # cv.imshow("preview", convertedFrame)
-    (_, buf) = cv.imencode(".jpg", convertedFrame, [int(cv.IMWRITE_JPEG_QUALITY), 50])
+    (_, buf) = cv.imencode(".jpg", convertedFrame, [int(cv.IMWRITE_JPEG_QUALITY), 35])
     imBytes = pickle.dumps(buf)
     # print(sys.getsizeof(imBytes))
 
@@ -61,17 +59,31 @@ def sendVideoFrame(msg):
     except Exception as e:
         print(e)
         print("Video send fail")
+        video_client_socket.close()
         rospy.signal_shutdown('')
 
 
-'''
+
 def sendDepthFrame(msg):
     bridgeObj = CvBridge()
-    convertedFrame = bridgeObj.imgmsg_to_cv2(msg, desired_encoding='passthrough')
-    convertedFrame = cv.normalize(convertedFrame, None, 0, 1, cv.NORM_MINMAX, dtype=cv.CV_32F)
-    convertedFrame *= 255
-    convertedFrame = convertedFrame.astype(np_uint8)
+    convertedFrame = bridgeObj.imgmsg_to_cv2(msg, desired_encoding='32FC1')
+    convertedFrame = np.array(convertedFrame, dtype=np.float32)
+    cv.normalize(convertedFrame, convertedFrame, 0, 1, cv.NORM_MINMAX)
+    convertedFrame = (convertedFrame * 255).round().astype(np.uint8)
 
+    (_, convertedFrame) = cv.imencode(".jpg", convertedFrame, [int(cv.IMWRITE_JPEG_QUALITY), 50])
+    # print(convertedFrame)
+    depthImgBytes = pickle.dumps(convertedFrame)
+
+    try:
+        depth_client_socket.sendto((depthImgBytes), client_addr_depth)
+    except Exception as e:
+        print(e)
+        print("Depth video send fail")
+        depth_client_socket.close()
+        rospy.signal_shutdown('')
+
+    """ 
     # (_, buf) = cv.imencode(".jpg", convertedFrame, [int(cv.IMWRITE_JPEG_QUALITY), 50])
     buf = convertedFrame.tobytes()
     buf_size = len(buf)
@@ -100,13 +112,8 @@ def sendDepthFrame(msg):
 
             # send the frames accordingly
             depth_client_socket.sendto(data, client_addr_depth)
+    """
 
-
-    except Exception as e:
-        print(e)
-        print("Video send fail")
-        rospy.signal_shutdown('')
-'''
 
 
 def sendStateData(msg):
@@ -118,13 +125,17 @@ def sendStateData(msg):
     }
     # print(data)
     try:
-        check = data_client_socket.sendall(pickle.dumps(data))
+        data_pickelised = json.dumps(data)
+        # data_pickelised = pickle.dumps(data)
+        print(sys.getsizeof(data_pickelised))
+        check = data_client_socket.send(data_pickelised)
         if(check != None):
             print("Data send incomplete/failed")
 
     except Exception as e:
         print(e)
         print('Client unavailable')
+        data_client_socket.close()
         rospy.signal_shutdown('')
 
 
@@ -139,9 +150,6 @@ def spinRos():
 
     if(connectedSocketCount == NUM_OF_SOCKETS):
         print('---ALL LINKS CONNECTED---')
-        rospy.Subscriber(JOINT_STATE_TOPIC, JointState, sendStateData)
-        rospy.Subscriber(COLOR_CAMERA_TOPIC, CompressedImage, sendVideoFrame)
-        # rospy.Subscriber(DEPTH_CAMERA_TOPIC, Image, sendDepthFrame)
         rospy.spin()
 
 
@@ -157,6 +165,7 @@ def initVideoLink():
     if(msg.decode('utf-8') == 'namaste'):
         client_addr_rgb = addr
         print('Video link client connected %s' % client_addr_rgb[0])
+        rospy.Subscriber(COLOR_CAMERA_TOPIC, Image, sendVideoFrame)
         spinRos()
 
 
@@ -172,6 +181,7 @@ def initDepthVideoLink():
     if(msg.decode('utf-8') == 'namaste'):
         client_addr_depth = addr
         print('Depth link client connected %s' % client_addr_depth[0])
+        rospy.Subscriber(DEPTH_CAMERA_TOPIC, Image, sendDepthFrame)
         spinRos()
 
 
@@ -189,21 +199,40 @@ def initDataLink():
         (data_client_socket, addr) = rcvmsg_socket.accept()
         if data_client_socket:
             print('Data link client connected %s' % addr[0])
+            rospy.Subscriber(JOINT_STATE_TOPIC, JointState, sendStateData)
             spinRos()
+            
     except Exception as e:
         print(e)
         print('Data link init failed!')
+        
+
+
+def cleanQuit():
+    global isRunning
+    print('Quitting...')
+    video_client_socket.close()
+    depth_client_socket.close()
+    data_client_socket.close()
+    rospy.signal_shutdown('')
+    isRunning = False
+    return None
 
 
 
-print("Launching...")
-vidLinkThread = threading.Thread(target=initVideoLink, args=())
-# depthLinkThread = threading.Thread(target=initDepthVideoLink, args=())
-dataLinkThread = threading.Thread(target=initDataLink, args=())
+try:
+    print("Launching...")
+    vidLinkThread = threading.Thread(target=initVideoLink, args=())
+    depthLinkThread = threading.Thread(target=initDepthVideoLink, args=())
+    dataLinkThread = threading.Thread(target=initDataLink, args=())
 
-vidLinkThread.start()
-# depthLinkThread.start()
-dataLinkThread.start()
+    # vidLinkThread.start()
+    depthLinkThread.start()
+    # dataLinkThread.start()
+    
+except KeyboardInterrupt:
+    cleanQuit()
+
 
 # initVideoLink()
 # initDepthVideoLink()
