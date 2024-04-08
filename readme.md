@@ -1,9 +1,26 @@
-# ros_kortex
-ROS Kortex is the official ROS package to interact with Kortex and its related products. It is built upon the Kortex API, documentation for which can be found in the [GitHub Kortex repository](https://github.com/Kinovarobotics/kortex).
+# ros_kortex (Melodic, Ubuntu 18)
+This is a fork of [ROS Kortex](https://github.com/Kinovarobotics/ros_kortex/tree/melodic-devel) to interact with Kinova Kortex supported Robotic Arm (Gen3 & Gen3 Lite).
 
-## Important
+It is built upon the Kortex API, documentation for which can be found in the [GitHub Kortex repository](https://github.com/Kinovarobotics/kortex).
 
-This branch is no longer maintained as Ubuntu 18.04 Bionic Beaver and ROS Melodic are end-of-life.
+This is NOT OFFICIALLY maintained by Kinova Robotics as Ubuntu 18.04 and ROS Melodic are end-of-life.
+
+## Key differences from official
+- Added functional Gen3 6DoF RGB and Depth camera to Gazebo sim [model](kortex_description/arms/gen3/6dof/urdf/gen3_macro.xacro).
+- Fixed RViz global fixed frame.
+- RViz starts with pre-defined config.
+- Custom ROS-python control [scripts](kortex_driver/launch/python_scripts/) (for testing only).
+- Python TCP socket sensor [data streamer](kortex_driver/launch/python_scripts/chunkedSender.py).
+
+The modifications are to cater for personal research project and does not guarantee correct/stable working.
+
+Feel free to refer or use any of this, ping me for quick assistance.
+
+#### To start Gen3 6DoF with Gazebo sim: 
+```sh
+roslaunch kortex_gazebo spawn_kortex_robot.launch arm:=gen3 dof:=6 gripper:=robotiq_2f_140
+```
+> Make sure to `source` the correct catkin workspace in your bash.
 
 ## Download links
 
