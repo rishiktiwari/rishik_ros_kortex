@@ -14,6 +14,8 @@ class KinovaControls:
     def __init__(self):
         self.cmdQueue = Queue()
         self.isRunning = True
+        self.lastGripperVal = -1.0
+        self.listenerThread = None
 
         try:
             rospy.init_node('kinova_rishik')
@@ -184,7 +186,7 @@ class KinovaControls:
         success = self.is_init_success
 
         if success:
-            success &= self.clear_errs()
+            # success &= self.clear_errs()
             # success &= self.home_the_robot()
             # success &= self.setReferenceToCartesian()
             # success &= self.subscribeRobotNotification()
@@ -200,9 +202,11 @@ class KinovaControls:
                     return False
                 
                 # actuate gripper
-                print('actuating gripper')
-                self.actuate_gripper(gripperVal)
-                time.sleep(1) # required for action to complete
+                if(gripperVal != self.lastGripperVal):
+                    print('actuating gripper')
+                    self.actuate_gripper(gripperVal)
+                    self.lastGripperVal = gripperVal
+                    time.sleep(1) # required for action to complete
                 
                 print('preparing pose')
                 my_constrained_pose = ConstrainedPose()
@@ -230,7 +234,7 @@ class KinovaControls:
                 else:
                     rospy.loginfo("Waiting for pose to finish...")
 
-                # self.wait_for_action_end_or_abort()
+                self.wait_for_action_end_or_abort()
                 self.poseId += 1
 
             except KeyboardInterrupt:
@@ -244,14 +248,19 @@ class KinovaControls:
         
 
     def _startMoveThread(self):
-        while self.isRunning:
-            if self.cmdQueue.empty():
-                continue
-            
-            poseStr = self.cmdQueue.get()
-            cartCoords = poseStr.split(' ')
-            cartCoords = np.asarray(cartCoords, dtype=float)
-            self.move_cartesian(*cartCoords)
+        try:
+            while self.isRunning:
+                if self.cmdQueue.empty():
+                    continue
+                
+                poseStr = self.cmdQueue.get()
+                cartCoords = poseStr.split(' ')
+                cartCoords = np.asarray(cartCoords, dtype=float)
+                self.move_cartesian(*cartCoords)
+        except Exception or KeyboardInterrupt:
+            print('exception, terminating movement controller')
+            self.closeKinova()
+        return None
 
 
     def addPoseToQueue(self, pose):
@@ -260,12 +269,15 @@ class KinovaControls:
 
 
     def initContinousListener(self):
-        threading.Thread(target=self._startMoveThread, args=()).start()
+        self.listenerThread = threading.Thread(target=self._startMoveThread, args=())
+        self.listenerThread.start()
         return True
 
 
     def closeKinova(self):
         print('Closing kinova controller')
         self.isRunning = False
+        if self.listenerThread:
+            self.listenerThread.join(3.0)
         with self.cmdQueue.mutex:
             self.cmdQueue.queue.clear()

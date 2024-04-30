@@ -115,7 +115,7 @@ class movTest:
 
         # Call the service
         try:
-            self.set_cartesian_reference_frame()
+            self.set_cartesian_reference_frame(req)
         except rospy.ServiceException:
             rospy.logerr("Failed to call SetCartesianReferenceFrame")
             return False

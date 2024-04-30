@@ -27,21 +27,26 @@ class CommandServer:
 
     def initServer(self):
         print('Starting command link...')
+        recvMsgThread = None
         try:
             self.rcvmsg_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM) #TCP
             self.rcvmsg_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.rcvmsg_socket.settimeout(600.0)
             self.rcvmsg_socket.bind(self.HOST_ADDR)
             self.rcvmsg_socket.listen(5)
             print('Command link listening at', self.HOST_ADDR)
 
             (self.client_socket, self.client_addr) = self.rcvmsg_socket.accept()
+            self.client_socket.settimeout(600.0)
             if self.client_socket:
                 print('Client connected', self.client_addr)
-                threading.Thread(target=self._recvMsgs).start()
+                recvMsgThread = threading.Thread(target=self._recvMsgs)
+                recvMsgThread.start()
                 self.kinovactrl.initContinousListener()
         
         except KeyboardInterrupt:
             print('KbdInrpt, closing socket')
+            recvMsgThread.join(5.0)
             self.closeSocket()
 
 

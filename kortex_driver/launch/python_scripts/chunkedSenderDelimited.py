@@ -16,7 +16,7 @@ import numpy as np
 
 DATA_HOST_ADDR = ('0.0.0.0', 9998)
 CHUNK_SIZE = 1024
-NUM_OF_SKIPS = 40 # 1Hz
+NUM_OF_SKIPS = 20 # 2Hz
 ENCODING_FORMAT = 'utf-8'
 PACK_FLAG = '[PACKET]'
 CV_BRIDGE = CvBridge()
@@ -51,15 +51,17 @@ def cleanQuit():
     
 def mergeImages(rgbImage, depthImage):
     # combines both to create (320, 240, 4) image
-    rgbImage = CV_BRIDGE.imgmsg_to_cv2(rgbImage, desired_encoding='bgr8')
-    rgbImage =  cv.resize(rgbImage, (320, 240))
+    rgbImage = CV_BRIDGE.imgmsg_to_cv2(rgbImage, desired_encoding='bgr8') # 480x640
+    scale_factor = 270.0/rgbImage.shape[0] # height is min, so factor to reduce height to 320
+    rgbImage = cv.resize(rgbImage, None, fx=scale_factor, fy=scale_factor)
+    mid = rgbImage.shape[1]//2
+    rgbImage = rgbImage[:, mid-135 : mid+135, :] # center crop, 270x270
     
     # normalise depth image - may lose accuracy
     depthImage = CV_BRIDGE.imgmsg_to_cv2(depthImage, desired_encoding='32FC1')
     depthImage = np.array(depthImage, dtype=np.float32)
     #cv.normalize(depthImage, depthImage, 0, 1, cv.NORM_MINMAX)
     #depthImage = (depthImage * 255).round().astype(np.uint8)
-    depthImage = cv.resize(depthImage, (426, 240)) # maintains 16:9 ratio, but match height with rgb
     
     # crop and align with rgb image
     x_offset = 0
@@ -96,7 +98,7 @@ def sendStateData(jointState, rgbImage, depthImage):
         #send data size msg
         length_msg = (PACK_FLAG + str(data_size)).encode(encoding=ENCODING_FORMAT)
         length_msg += b'.' * (CHUNK_SIZE - len(length_msg)) # add padding
-        print('Length discriptor size: %d' % len(length_msg))
+        print('Length descriptor size: %d' % len(length_msg))
         sent = data_client_socket.sendall(length_msg)
         if(sent == 0):
             raise Exception("connection broken")
