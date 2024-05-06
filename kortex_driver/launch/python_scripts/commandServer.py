@@ -43,6 +43,7 @@ class CommandServer:
                 recvMsgThread = threading.Thread(target=self._recvMsgs)
                 recvMsgThread.start()
                 self.kinovactrl.initContinousListener()
+                self.kinovactrl.sendCommandFeedback = self.client_socket.sendall
         
         except KeyboardInterrupt:
             print('KbdInrpt, closing socket')
@@ -60,11 +61,8 @@ class CommandServer:
                     print('> QUIT RCVD <')
                     break
                 print('RCVD CMD: \n>\t%s' % msg)
-
                 self.kinovactrl.addPoseToQueue(msg)
-                # cartCoords = msg.split(' ')
-                # cartCoords = np.asarray(cartCoords, dtype=float)
-                # self.kinovactrl.move_cartesian(*cartCoords)
+                print('In queue: %d' % self.kinovactrl.getQueueSize())
 
             except Exception or KeyboardInterrupt as e:
                 print(e)

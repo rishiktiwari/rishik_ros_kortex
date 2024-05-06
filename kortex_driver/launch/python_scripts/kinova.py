@@ -16,6 +16,7 @@ class KinovaControls:
         self.isRunning = True
         self.lastGripperVal = -1.0
         self.listenerThread = None
+        self.sendCommandFeedback = None
 
         try:
             rospy.init_node('kinova_rishik')
@@ -95,7 +96,7 @@ class KinovaControls:
             return False
         else:
             rospy.loginfo("Cleared the faults successfully")
-            rospy.sleep(2.5)
+            # rospy.sleep(2.5)
             return True
 
     def home_the_robot(self):
@@ -231,10 +232,9 @@ class KinovaControls:
                 except rospy.ServiceException:
                     rospy.logerr("Failed to send pose "+str(self.poseId))
                     success = False
-                else:
-                    rospy.loginfo("Waiting for pose to finish...")
 
                 self.wait_for_action_end_or_abort()
+                self.sendCommandFeedback('done') # important, always send feedback on action complete
                 self.poseId += 1
 
             except KeyboardInterrupt:
@@ -266,6 +266,10 @@ class KinovaControls:
     def addPoseToQueue(self, pose):
         self.cmdQueue.put(pose)
         return None
+
+    
+    def getQueueSize(self):
+        return self.cmdQueue.qsize()
 
 
     def initContinousListener(self):
