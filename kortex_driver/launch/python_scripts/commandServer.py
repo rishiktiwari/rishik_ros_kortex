@@ -3,14 +3,15 @@
 import socket
 import threading
 # import rospy
-import numpy as np
-from kinova import KinovaControls
+# import numpy as np
+# from kinova import KinovaControls
+from kinovaViaAPI import KinovaControls
 
 class CommandServer:
     def __init__(self):
         self.HOST_ADDR = ('0.0.0.0', 9999)
         self.ENCODING_FORMAT = 'utf-8'
-        self.HEADER_SIZE = 1024
+        self.HEADER_SIZE = 32
         
         self.isRunning = True
         self.rcvmsg_socket = None
