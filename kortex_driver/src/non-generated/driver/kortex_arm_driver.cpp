@@ -711,7 +711,7 @@ void KortexArmDriver::registerSimulationHandlers()
     base_services_simulation->ApplyEmergencyStopHandler = std::bind(&KortexArmSimulation::ApplyEmergencyStop, m_simulator.get(), std::placeholders::_1);
 
     // Uncomment this SendTwistCommand handler to use the twist command simulation - not stable
-    // base_services_simulation->SendTwistCommandHandler = std::bind(&KortexArmSimulation::SendTwistCommand, m_simulator.get(), std::placeholders::_1);
+    base_services_simulation->SendTwistCommandHandler = std::bind(&KortexArmSimulation::SendTwistCommand, m_simulator.get(), std::placeholders::_1);
 
     // Prospects
     //SendSelectedJointSpeedCommand

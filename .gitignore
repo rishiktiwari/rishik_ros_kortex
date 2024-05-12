@@ -2,4 +2,6 @@
 .*/
 !/.gitignore
 
-.pyc
+*.pyc
+kortex_driver/launch/python_scripts/*pyc
+kortex_driver/launch/python_scripts/recordings/
