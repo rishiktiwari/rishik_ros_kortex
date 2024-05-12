@@ -14,6 +14,8 @@ log_file = None
 flag_first_entry = True
 script_start_time = None
 
+
+
 def callback(jointState):
     global samples_skipped, flag_first_entry
 
@@ -41,7 +43,7 @@ def callback(jointState):
 
 
 
-def listener():
+def init():
     global log_file, script_start_time
     dt = datetime.now().strftime("%d-%b-%Y__%H-%M-%S")
     log_file_name = LOG_DIR_PATH + "log__" + dt + ".json"
@@ -63,7 +65,7 @@ def listener():
             log_file.write("\n]\n")
             log_file.close()
             print("\n\n--- closed file: %s\n\n" % log_file_name)
-
+        print("\nexit!\n")
 
 if __name__ == '__main__':
-    listener()
+    init()

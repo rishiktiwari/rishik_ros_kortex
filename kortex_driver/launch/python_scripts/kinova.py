@@ -12,6 +12,7 @@ from kortex_driver.msg import *
 
 class KinovaControls:
     def __init__(self):
+        self.ENCODING_FORMAT = 'utf-8'
         self.cmdQueue = Queue()
         self.isRunning = True
         self.lastGripperVal = -1.0
@@ -234,7 +235,9 @@ class KinovaControls:
                     success = False
 
                 self.wait_for_action_end_or_abort()
-                self.sendCommandFeedback('done') # important, always send feedback on action complete
+                # self.sendCommandFeedback('done') # important, always send feedback on action complete
+                poseStr = "%.2f %.2f %.2f %.2f" % (px, py, pz, gripperVal)
+                self.sendCommandFeedback(poseStr.encode(self.ENCODING_FORMAT)) # important, always send feedback on action complete
                 self.poseId += 1
 
             except KeyboardInterrupt:

@@ -4,8 +4,8 @@ import socket
 import threading
 # import rospy
 # import numpy as np
-# from kinova import KinovaControls
-from kinovaViaAPI import KinovaControls
+# from kinova import KinovaControls           # USES ROS-KORTEX DRIVER
+from kinovaViaAPI import KinovaControls   # USES KORTEX API
 
 class CommandServer:
     def __init__(self):
