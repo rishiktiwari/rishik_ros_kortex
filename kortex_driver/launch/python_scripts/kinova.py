@@ -2,6 +2,7 @@
 
 import rospy
 import time
+import json
 import threading
 import numpy as np
 from Queue import Queue
@@ -183,7 +184,7 @@ class KinovaControls:
         else:
             return True
 
-    def move_cartesian(self, px, py, pz, gripperVal = 0.0):
+    def move_cartesian(self, px, py, pz, gripperVal = 0.0, sendFeedback = False):
         # For testing purposes
         success = self.is_init_success
 
@@ -235,9 +236,10 @@ class KinovaControls:
                     success = False
 
                 self.wait_for_action_end_or_abort()
-                # self.sendCommandFeedback('done') # important, always send feedback on action complete
-                poseStr = "%.2f %.2f %.2f %.2f" % (px, py, pz, gripperVal)
-                self.sendCommandFeedback(poseStr.encode(self.ENCODING_FORMAT)) # important, always send feedback on action complete
+                if sendFeedback == True:
+                    # self.sendCommandFeedback('done')
+                    poseStr = "%.2f %.2f %.2f %.2f" % (px, py, pz, gripperVal)
+                    self.sendCommandFeedback(poseStr.encode(self.ENCODING_FORMAT))
                 self.poseId += 1
 
             except KeyboardInterrupt:
@@ -256,12 +258,13 @@ class KinovaControls:
                 if self.cmdQueue.empty():
                     continue
                 
-                poseStr = self.cmdQueue.get()
-                cartCoords = poseStr.split(' ')
+                commandJson = self.cmdQueue.get()
+                cartCoords = commandJson["pose"].split(' ')
                 cartCoords = np.asarray(cartCoords, dtype=float)
-                self.move_cartesian(*cartCoords)
-        except Exception or KeyboardInterrupt:
-            print('exception, terminating movement controller')
+                self.move_cartesian(*cartCoords, sendFeedback=commandJson["feedback"])
+        except Exception or KeyboardInterrupt as e:
+            print('exception, terminating movement controller\n|>\t', e)
+        finally:
             self.closeKinova()
         return None
 
@@ -282,9 +285,8 @@ class KinovaControls:
 
 
     def closeKinova(self):
-        print('Closing kinova controller')
-        self.isRunning = False
-        if self.listenerThread:
-            self.listenerThread.join(3.0)
-        with self.cmdQueue.mutex:
-            self.cmdQueue.queue.clear()
+        if self.isRunning == True: # to prevent recursive calls
+            print('Closing kinova controller')
+            self.isRunning = False
+            with self.cmdQueue.mutex:
+                self.cmdQueue.queue.clear()

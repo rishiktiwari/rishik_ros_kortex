@@ -5,12 +5,13 @@ This script starts the TCP server to stream RGB, Depth image and joint states to
 '''
 
 import rospy, message_filters, json, pickle, socket, sys
-# import threading
+import threading
+import numpy as np
+import cv2 as cv    # opencv version 3.4.0.14
 
+from time import sleep
 from sensor_msgs.msg import Image, JointState
 from cv_bridge import CvBridge
-import cv2 as cv    # opencv version 3.4.0.14
-import numpy as np
 
 
 
@@ -39,14 +40,15 @@ isRunning = True
 
 def cleanQuit():
     global isRunning
-    print('Quitting...')
-    isRunning = False
-    data_client_socket.shutdown(socket.SHUT_RDWR)
-    data_client_socket.close()
-    rcvmsg_socket.shutdown(socket.SHUT_RDWR)
-    rcvmsg_socket.close()
-    rospy.signal_shutdown('')
-    sys.exit()
+    if (isRunning == True): # to prevent recursive calls
+        print('Quitting...')
+        isRunning = False
+        rospy.signal_shutdown('')
+        data_client_socket.shutdown(socket.SHUT_RDWR)
+        data_client_socket.close()
+        rcvmsg_socket.shutdown(socket.SHUT_RDWR)
+        rcvmsg_socket.close()
+        sys.exit()
     
     
 def mergeImages(rgbImage, depthImage):
@@ -118,14 +120,12 @@ def sendStateData(jointState, rgbImage, depthImage):
             
         print('-- Data sent --')
         
-    except Exception as e:
+    except Exception or KeyboardInterrupt as e:
         print(e)
-        print('Client unavailable')
+        print('Client unavailable / Interrupted')
         cleanQuit()
-        
-    except KeyboardInterrupt:
-        print('Interrupted')
-        cleanQuit()
+
+    return None
 
 
 
@@ -144,19 +144,21 @@ def cbHandler(*args):
     return None
 
 
-""" 
+
 def listenForSrvCmd():
     global isRunning, data_client_socket
     print('Listening srv cmds...')
     while isRunning:
-        msg = data_client_socket.recv(1024)
+        msg = data_client_socket.recv(8)
         if(str(msg).strip() == 'quit'):
             print('> QUIT RCVD <')
             break
+        sleep(0.1)
 
     print('Deafened srv cmnds!')
     cleanQuit()
- """
+    return None
+
 
 
 def initDataLink():
@@ -173,7 +175,7 @@ def initDataLink():
         (data_client_socket, addr) = rcvmsg_socket.accept()
         if data_client_socket:
             print('Data link client connected: %s' % addr[0])
-            # threading.Thread(target=listenForSrvCmd).start()
+            threading.Thread(target=listenForSrvCmd).start()
             # rospy.Subscriber(JOINT_STATE_TOPIC, JointState, cbHandler)
             image_sub = message_filters.Subscriber(COLOR_CAMERA_TOPIC, Image)
             depth_sub = message_filters.Subscriber(DEPTH_CAMERA_TOPIC, Image)
@@ -197,5 +199,24 @@ def initDataLink():
 if __name__ == '__main__':
     print("Launching...")
     print("Using python: " + sys.version)
+    print("""\n\n
+	+--------------------------------------------------------+
+	|                                                        |
+	|   ..::Victoria University, Melbourne, Australia::..    |
+	|                     -- May 2024 --                     |
+	|                                                        |
+	| LLM-CV powered robotic arm manipulator for Kinova Gen3 |
+	|                                                        |
+	| Developed by Rishik R. Tiwari                          |
+	|              techyrishik[at]gmail[dot]com              |
+	|                                                        |
+	| LLM: Microsoft Phi-3-mini-q4-GGUF                      |
+	| VLM: OpenAI CLIP                                       |
+	|                                                        |
+	| Tested on: Apple Macbook Pro (M1, 16GB)                |
+	| Remark: Stable 1Hz inference                           |
+	|                                                        |
+	+--------------------------------------------------------+
+	\n\n\n""")
     rospy.init_node('rishik_socketstreamer', anonymous=True)
     initDataLink()
