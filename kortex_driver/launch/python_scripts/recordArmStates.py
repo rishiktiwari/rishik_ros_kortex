@@ -8,7 +8,7 @@ from datetime import datetime
 from sensor_msgs.msg import JointState
 
 LOG_DIR_PATH = "/home/rishik/catkin_workspace/src/ros_kortex/kortex_driver/launch/python_scripts/recordings/"
-SUBSAMPLE_SKIP_FRAMES = 20
+SUBSAMPLE_SKIP_FRAMES = 5
 samples_skipped = 0
 log_file = None
 flag_first_entry = True

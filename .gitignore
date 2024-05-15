@@ -5,3 +5,4 @@
 *.pyc
 kortex_driver/launch/python_scripts/*pyc
 kortex_driver/launch/python_scripts/recordings/
+kortex_driver/launch/python_scripts/config.py

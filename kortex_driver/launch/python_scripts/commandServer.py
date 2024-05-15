@@ -3,8 +3,12 @@
 import socket
 import threading
 import json
-from kinova import KinovaControls           # USES ROS-KORTEX DRIVER
-# from kinovaViaAPI import KinovaControls   # USES KORTEX API
+# from kinova import KinovaControls           # USES ROS-KORTEX DRIVER
+from kinovaViaAPI import KinovaControls   # USES KORTEX API
+
+# NOTE: Run this script using python3 commandServer.py when using the Kortex API instead of rosrun
+
+
 
 class CommandServer:
     def __init__(self):
@@ -120,6 +124,7 @@ class CommandServer:
         self.rcvmsg_socket.close()
         # rospy.signal_shutdown('')
         print('Command link closed')
+        exit(1)
 
 
 

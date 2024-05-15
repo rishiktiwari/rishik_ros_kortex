@@ -12,23 +12,17 @@ import cv2 as cv    # opencv version 3.4.0.14
 from time import sleep
 from sensor_msgs.msg import Image, JointState
 from cv_bridge import CvBridge
+from config import EnvConfig
 
 
 
 DATA_HOST_ADDR = ('0.0.0.0', 9998)
 CHUNK_SIZE = 1024
-NUM_OF_SKIPS = 20 # 2Hz
+NUM_OF_SKIPS = 20   # 40: 1Hz, 20: 2Hz, 12: 2.5Hz
 ENCODING_FORMAT = 'utf-8'
 PACK_FLAG = '[PACKET]'
 CV_BRIDGE = CvBridge()
-
-JOINT_STATE_TOPIC = '/my_gen3/joint_states'
-
-COLOR_CAMERA_TOPIC = '/my_gen3/camera/color/image_raw'    # For Sim Arm - color
-#COLOR_CAMERA_TOPIC = '/camera/color/image_raw'              # For Real Arm
-
-DEPTH_CAMERA_TOPIC = '/my_gen3/camera/depth/image_raw'    # For Sim Arm - depth
-#DEPTH_CAMERA_TOPIC = '/camera/depth/image'                  # For Real Arm
+CONFIG = EnvConfig()
 
 rcvmsg_socket = None
 client_addr_rgb = None      # for RGB stream
@@ -176,10 +170,10 @@ def initDataLink():
         if data_client_socket:
             print('Data link client connected: %s' % addr[0])
             threading.Thread(target=listenForSrvCmd).start()
-            # rospy.Subscriber(JOINT_STATE_TOPIC, JointState, cbHandler)
-            image_sub = message_filters.Subscriber(COLOR_CAMERA_TOPIC, Image)
-            depth_sub = message_filters.Subscriber(DEPTH_CAMERA_TOPIC, Image)
-            jointstate_sub = message_filters.Subscriber(JOINT_STATE_TOPIC, JointState)
+            # rospy.Subscriber(CONFIG.JOINT_STATE_TOPIC, JointState, cbHandler)
+            image_sub = message_filters.Subscriber(CONFIG.COLOR_CAMERA_TOPIC, Image)
+            depth_sub = message_filters.Subscriber(CONFIG.DEPTH_CAMERA_TOPIC, Image)
+            jointstate_sub = message_filters.Subscriber(CONFIG.JOINT_STATE_TOPIC, JointState)
             rosTimeSync = message_filters.ApproximateTimeSynchronizer([jointstate_sub, image_sub, depth_sub], queue_size=10, slop=1)
             rosTimeSync.registerCallback(cbHandler)
             rospy.spin()
