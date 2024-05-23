@@ -28,8 +28,8 @@ rcvmsg_socket = None
 client_addr_rgb = None      # for RGB stream
 client_addr_depth = None    # for Depth stream
 data_client_socket = None   # for data stream
-skipCounter = 0
 isRunning = True
+sendFrame = False
 
 
 def cleanQuit():
@@ -76,6 +76,8 @@ def mergeImages(rgbImage, depthImage):
 
 
 def sendStateData(jointState, rgbImage, depthImage):
+    global sendFrame
+    sendFrame = False
     rgbdImage = mergeImages(rgbImage, depthImage)
     
     data = {
@@ -124,11 +126,8 @@ def sendStateData(jointState, rgbImage, depthImage):
 
 
 def cbHandler(*args):
-    global skipCounter
-    skipCounter += 1
-    if(skipCounter == NUM_OF_SKIPS):
-        print('--- Subsampled Synced Frame Ready ---')
-        skipCounter = 0
+    if(sendFrame == True):
+        print('--- Frame Ready ---')
         try:
             sendStateData(*args)
         except Exception or KeyboardInterrupt as e:
@@ -140,13 +139,16 @@ def cbHandler(*args):
 
 
 def listenForSrvCmd():
-    global isRunning, data_client_socket
+    global isRunning, data_client_socket, sendFrame
     print('Listening srv cmds...')
     while isRunning:
-        msg = data_client_socket.recv(8)
-        if(str(msg).strip() == 'quit'):
+        msg = data_client_socket.recv(8).decode(ENCODING_FORMAT).strip()
+        if(msg == 'frame'):
+            sendFrame = True
+        elif(msg == 'quit'):
             print('> QUIT RCVD <')
             break
+        
         sleep(0.1)
 
     print('Deafened srv cmnds!')

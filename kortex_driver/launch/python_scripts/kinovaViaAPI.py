@@ -174,7 +174,7 @@ class KinovaControls:
             self.base_cyclic = BaseCyclicClient(router)
             self.success = True
             # self.success &= self.move_to_home_position()
-            self.move_cartesian(0.3, 0.3, 0.4, 0.0)
+            # self.move_cartesian(0.3, 0.3, 0.4, 0.0)
 
             while self.isRunning:
                 if self.cmdQueue.empty():
