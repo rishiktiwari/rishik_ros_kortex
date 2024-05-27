@@ -2,6 +2,8 @@
 
 '''
 This script starts the TCP server to stream RGB, Depth image and joint states to client.
+This does not continuously stread the data but send when request "frame" is received.
+Difference between chunkedSender.py and this is the use of delimiter PACK_FLAG to specify start of a data package. 
 '''
 
 import rospy, message_filters, json, pickle, socket, sys
@@ -162,6 +164,7 @@ def initDataLink():
     print('\nInit data link...')
     rcvmsg_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM) #TCP
     rcvmsg_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    rcvmsg_socket.settimeout(600.0)
 
     try:
         rcvmsg_socket.bind(DATA_HOST_ADDR)

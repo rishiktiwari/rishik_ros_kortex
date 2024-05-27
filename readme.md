@@ -9,18 +9,50 @@ This is NOT OFFICIALLY maintained by Kinova Robotics as Ubuntu 18.04 and ROS Mel
 - Added functional Gen3 6DoF RGB and Depth camera to Gazebo sim [model](kortex_description/arms/gen3/6dof/urdf/gen3_macro.xacro).
 - Fixed RViz global fixed frame.
 - RViz starts with pre-defined config.
-- Custom ROS-python control [scripts](kortex_driver/launch/python_scripts/) (for testing only).
-- Python TCP socket sensor [data streamer](kortex_driver/launch/python_scripts/chunkedSender.py).
+- Custom ROS-python control [scripts](kortex_driver/launch/python_scripts/) (for experimentation only).
+- Python TCP socket based [continuous data streamer](kortex_driver/launch/python_scripts/chunkedSender.py) and [on-req data streamer](kortex_driver/launch/python_scripts/chunkedSenderDelimited.py).
 
 The modifications are to cater for personal research project and does not guarantee correct/stable working.
 
-Feel free to refer or use any of this, ping me for quick assistance.
+Feel free to refer or use any of this.
 
 #### To start Gen3 6DoF with Gazebo sim: 
 ```sh
 roslaunch kortex_gazebo spawn_kortex_robot.launch arm:=gen3 dof:=6 gripper:=robotiq_2f_140
 ```
 > Make sure to `source` the correct catkin workspace in your bash.
+
+# Remote AI Inference
+
+### Setup
+
+1. Copy the [config-sample.py](kortex_driver/launch/python_scripts/config-sample.py) to config.py and set the variables appropriately.
+```sh
+cd kortex_driver/launch/python_scripts
+cp config-sample.py confg.py
+```
+
+2. Uncomment the appropriate `KinovaControls` in [commandServer.py](kortex_driver/launch/python_scripts/commandServer.py).
+KortexAPI only works with real arm, ROS-Kortex works with both real and sim arm but is slow.
+
+
+### Start Server
+1. Start ROS data sender in new terminal session:
+```sh
+rosrun kortex_driver chunkedSenderDelimited.py
+```
+
+2. Start remote command receiver in new terminal session:
+```sh
+python3 commandServer.py
+```
+
+3. Start inference script on remote device by following the instructions from repo: [coming soon].
+
+> Ensure that server and client are on the same network and server has known static local IP.
+
+
+# Official Kinova Setup Instructions
 
 ## Download links
 

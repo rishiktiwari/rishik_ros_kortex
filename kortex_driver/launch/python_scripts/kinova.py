@@ -1,11 +1,8 @@
-#!/usr/bin/env python
-
 import rospy
 import time
-import json
 import threading
 import numpy as np
-from Queue import Queue
+from queue import Queue
 
 from std_msgs.msg import String
 from kortex_driver.srv import *

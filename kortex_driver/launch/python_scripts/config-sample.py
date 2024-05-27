@@ -1,6 +1,6 @@
 class EnvConfig:
     def __init__(self):
-        self.USE_SIM = False
+        self.USE_SIM = False    # SET THIS
         self.JOINT_STATE_TOPIC = '/my_gen3/joint_states'
 
         if self.USE_SIM:
