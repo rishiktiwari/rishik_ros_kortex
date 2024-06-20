@@ -1,8 +1,8 @@
 import socket
 import threading
 import json
-from kinova import KinovaControls           # USES ROS-KORTEX DRIVER
-# from kinovaViaAPI import KinovaControls   # USES KORTEX API, only for real arm
+# from kinova import KinovaControls           # USES ROS-KORTEX DRIVER
+from kinovaViaAPI import KinovaControls   # USES KORTEX API, only for real arm
 
 # NOTE: Run this script using python3 commandServer.py when using the Kortex API instead of rosrun
 

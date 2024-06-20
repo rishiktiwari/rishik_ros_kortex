@@ -118,7 +118,8 @@ class FeedbackTest:
                         rowBuf.append(str(actuator.torque))
                         rowBuf.append(str(actuator.current_motor))
 
-                    # add gripper value
+                    # add gripper values
+                    rowBuf.append(str(base_feedback.interconnect.gripper_feedback.motor[0].position))
                     rowBuf.append(str(base_feedback.interconnect.gripper_feedback.motor[0].current_motor))
 
                     # write to file
@@ -160,7 +161,7 @@ class FeedbackTest:
             'j3_T', 'j3_I',
             'j4_T', 'j4_I',
             'j5_T', 'j5_I',
-            'gripper_I'
+            'gripper_pos', 'gripper_I'
         ]
         colsRow = ','.join(cols) + '\n'
 

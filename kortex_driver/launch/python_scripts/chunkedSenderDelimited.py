@@ -47,13 +47,13 @@ def cleanQuit():
         sys.exit()
     
     
-def mergeImages(rgbImage, depthImage):
-    # combines both to create (320, 240, 4) image
-    rgbImage = CV_BRIDGE.imgmsg_to_cv2(rgbImage, desired_encoding='bgr8') # 480x640
-    scale_factor = 270.0/rgbImage.shape[0] # height is min, so factor to reduce height to 320
+def alignAndMergeImages(rgbImage, depthImage):
+    # resizes, aligns and combines both images to create ((270x270x3), (270x270)) tuple
+    rgbImage = CV_BRIDGE.imgmsg_to_cv2(rgbImage, desired_encoding='bgr8') # 480x640 - set from kinova web ui
+    scale_factor = 270.0/rgbImage.shape[0] # height is min, so scale factor to reduce height to 270 (and width becomes 360)
     rgbImage = cv.resize(rgbImage, None, fx=scale_factor, fy=scale_factor)
     mid = rgbImage.shape[1]//2
-    rgbImage = rgbImage[:, mid-135 : mid+135, :] # center crop, 270x270
+    rgbImage = rgbImage[:, mid-135 : mid+135, :] # center crop, result img is 270x270x3
     
     # normalise depth image - may lose accuracy
     depthImage = CV_BRIDGE.imgmsg_to_cv2(depthImage, desired_encoding='32FC1')
@@ -65,8 +65,9 @@ def mergeImages(rgbImage, depthImage):
     x_offset = 0
     y_offset = 0
     crop_margin = int((depthImage.shape[1] - rgbImage.shape[1]) / 2) # extracts width diff and calculates center
-    depthImage = depthImage[:, (crop_margin + x_offset) : (depthImage.shape[1] - crop_margin + x_offset)]
+    depthImage = depthImage[:, (crop_margin + x_offset) : (depthImage.shape[1] - crop_margin + x_offset)] # crop depth image
     
+    #reposition the depth image to align with rgb image, offest is determined experimentaly
     depth_aligned = np.zeros(shape=(depthImage.shape[0], depthImage.shape[1]), dtype=np.float32)
     depth_aligned[0 : depth_aligned.shape[0] - y_offset, :] = depthImage[y_offset : depth_aligned.shape[0], :]
 
@@ -74,13 +75,13 @@ def mergeImages(rgbImage, depthImage):
     #rgbd[:, : , 0:3] = rgbImage
     #rgbd[0 : rgbd.shape[0] - y_offset, :, 3] = depthImage[y_offset : rgbd.shape[0], :]
     
-    return (rgbImage, depth_aligned) # rgb as uint8, depth as float32
+    return (rgbImage, depth_aligned) # rgb as uint8, depth as float32, image shape: ((270x270x3), (270x270))
 
 
 def sendStateData(jointState, rgbImage, depthImage):
     global sendFrame
     sendFrame = False
-    rgbdImage = mergeImages(rgbImage, depthImage)
+    rgbdImage = alignAndMergeImages(rgbImage, depthImage)
     
     data = {
         "name": jointState.name,
