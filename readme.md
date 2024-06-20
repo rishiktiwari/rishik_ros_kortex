@@ -1,4 +1,4 @@
-# ros_kortex (Melodic, Ubuntu 18)
+# Kinova ros_kortex (Unofficial, ROS Melodic, Ubuntu 18)
 This is a fork of [ROS Kortex](https://github.com/Kinovarobotics/ros_kortex/tree/melodic-devel) to interact with Kinova Kortex supported Robotic Arm (Gen3 & Gen3 Lite).
 
 It is built upon the Kortex API, documentation for which can be found in the [GitHub Kortex repository](https://github.com/Kinovarobotics/kortex).
@@ -24,9 +24,9 @@ roslaunch kortex_gazebo spawn_kortex_robot.launch arm:=gen3 dof:=6 gripper:=robo
 
 # Remote AI Inference
 
-### Setup
+### First time setup
 
-1. Copy the [config-sample.py](kortex_driver/launch/python_scripts/config-sample.py) to config.py and set the variables appropriately.
+1. Copy the [config-sample.py](kortex_driver/launch/python_scripts/config-sample.py) to **config.py** and set the variables appropriately.
 ```sh
 cd kortex_driver/launch/python_scripts
 cp config-sample.py confg.py
@@ -36,23 +36,29 @@ cp config-sample.py confg.py
 KortexAPI only works with real arm, ROS-Kortex works with both real and sim arm but is slow.
 
 
-### Start Server
-1. Start ROS data sender in new terminal session:
+### Start servers
+1. Start ROS [data sender](kortex_driver/launch/python_scripts/chunkedSenderDelimited.py) in new terminal session:
 ```sh
 rosrun kortex_driver chunkedSenderDelimited.py
 ```
 
-2. Start remote command receiver in new terminal session:
+2. Start [command server](kortex_driver/launch/python_scripts/commandServer.py) in new terminal session:
 ```sh
-python3 commandServer.py
+python3 kortex_driver/launch/python_scripts/commandServer.py
 ```
 
-3. Start inference script on remote device by following the instructions from repo: [coming soon].
+3. Start inference script on remote device by following the instructions from [rishiktiwari/kinova-AI-experiments](https://github.com/rishiktiwari/kinova-AI-experiments).
 
 > Ensure that server and client are on the same network and server has known static local IP.
 
 
-# Official Kinova Setup Instructions
+# First Time Kinova Setup Instructions
+
+Perform the below steps if setting-up Kinova Gen3 arm for the first time to use with ROS and Gazebo.
+
+Consolidated instructions  are available on [rishiktiwari/kinova_ros_addl_instructs](https://github.com/rishiktiwari/kinova_ros_addl_instructs)
+
+> I recommend using the consolidated instructions (above link) instead of the official forked instructions below to ensure consistency and avoid common pitfalls.
 
 ## Download links
 
