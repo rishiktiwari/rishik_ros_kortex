@@ -183,27 +183,40 @@ class movTest:
 
         if success:
             success &= self.clear_errs()
-            # success &= self.home_the_robot()
+            success &= self.home_the_robot()
             success &= self.setReferenceToCartesian()
             success &= self.subscribeRobotNotification()
 
             # POSITION DEFINITION
             my_cartesian_speed = CartesianSpeed()
             my_cartesian_speed.translation = 0.5      # m/s
-            my_cartesian_speed.orientation = 60     # deg/s
+            # my_cartesian_speed.orientation = 50.0     # deg/s, THIS IS UNAVAILABLE
 
             gripperVal = 0
             poseId = 1
             try:
                 # DEFINITION of waypoints: subaction[ (x, y, z, tx, ty, tz, gripper), ... ]
+
+                # for biscuit
+                """ waypoints = [
+                    (0.3, 0, 0.4, 180, 0, 90, 0),           # home
+                    (0.64, 0.15, 0.12, 180, 270, 90, 0.5),  # x-z align to biscuit
+                    (0.64, 0.23, 0.12, 180, 270, 90, 0.5),  # x-y align
+                    (0.64, 0.15, 0.2, 180, 270, 90, 0.85),  # lift out
+                    (0.8, 0, 0.12, 90, 0, 90, 0.85),        # x-y align to cup
+                    (0.5, 0.15, 0.15, 180, 270, 90, 0.5),   # release and move to neutral pos
+                    (0.3, 0, 0.4, 180, 0, 90, 0),           # home
+                ] """
+
+                # for kitkat
                 waypoints = [
-                    (0, 0.3, 0.4, 0, 180, 270, 0),          # home
-                    (0.3, -0.3, 0.21, 90, 90, 0, 0),        # point towards dispenser
-                    (0.3, -0.45, 0.21, 90, 90, 0, 0.5),     # aligned
-                    (0.3, -0.45, 0.3, 90, 90, 0, 0.85),     # lift out
-                    (0.3, 0, 0.2, 90, 0, 0, 0.85),          # v-align to cup
-                    (0.3, 0, 0.2, 90, 0, 0, 0),             # release
-                    (0, 0.3, 0.4, 0, 180, 270, 0),          # home
+                    (0.3, 0, 0.4, 180, 0, 90, 0),           # home
+                    (0.51, 0.15, 0.12, 180, 270, 90, 0.5),  # x-z align to kitkat
+                    (0.51, 0.23, 0.12, 180, 270, 90, 0.5),  # x-y align
+                    (0.51, 0.15, 0.2, 180, 270, 90, 0.9),   # lift out
+                    (0.8, 0, 0.12, 90, 0, 90, 0.9),         # x-y align to cup
+                    (0.5, 0.15, 0.15, 180, 270, 90, 0.5),   # release and move to neutral pos
+                    (0.3, 0, 0.4, 180, 0, 90, 0),           # home
                 ]
                 
                 numOfWaypoints = len(waypoints)
@@ -211,16 +224,16 @@ class movTest:
 
                 while i < numOfWaypoints:
                     # --- ENABLE FOR MANUALLY STEPPING WAYPOINTS ---
-                    # uinp = input('\nNext Step[enter], "quit", "prev": ').lower();
-                    # if uinp == 'quit':
-                    #     break
-                    # elif uinp == 'prev':
-                    #     if i == 0:
-                    #         print('\t> no prev step')
-                    #         continue
+                    uinp = input('\nNext Step[enter], "quit", "prev": ').lower()
+                    if uinp == 'quit':
+                        return False
+                    elif uinp == 'prev':
+                        if i == 0:
+                            print('\t> no prev step')
+                            continue
 
-                    #     i -= 2
-                    #     print('---prev step---')
+                        i -= 2
+                        print('---prev step---')
                     
                     print(waypoints[i])
                     (px, py, pz, tx, ty, tz, gripperVal) = waypoints[i]
@@ -236,13 +249,13 @@ class movTest:
                     time.sleep(1) # required for action to complete
                     
                     my_constrained_pose = ConstrainedPose()
+                    my_constrained_pose.constraint.oneof_type.speed.append(my_cartesian_speed)
                     my_constrained_pose.target_pose.x = px
                     my_constrained_pose.target_pose.y = py
                     my_constrained_pose.target_pose.z = pz
                     my_constrained_pose.target_pose.theta_x = tx
                     my_constrained_pose.target_pose.theta_y = ty
                     my_constrained_pose.target_pose.theta_z = tz
-                    my_constrained_pose.constraint.oneof_type.speed.append(my_cartesian_speed)
 
                     req = ExecuteActionRequest()
                     req.input.oneof_action_parameters.reach_pose.append(my_constrained_pose)
@@ -274,12 +287,13 @@ class movTest:
                 print('Terminating...')
                 pass
 
-
         # For testing purposes
         # rospy.set_param(result_topic, success)
 
         if not success:
             rospy.logerr("The program encountered an error.")
+            return False
+        return True
 
 if __name__ == "__main__":
     ex = movTest()
@@ -289,4 +303,5 @@ if __name__ == "__main__":
             print("Quitting...")
             break
         else:
-            ex.main()
+            if (ex.main() == False):
+                break
