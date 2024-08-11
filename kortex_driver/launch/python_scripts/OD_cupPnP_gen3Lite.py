@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 import rospy
 import time
 from kortex_driver.srv import *
@@ -19,7 +18,7 @@ class movTest:
             self.all_notifs_succeeded = True
 
             # Get node params
-            self.robot_name = rospy.get_param('~robot_name', "my_gen3")
+            self.robot_name = rospy.get_param('~robot_name', "my_gen3_lite")
             self.degrees_of_freedom = rospy.get_param("/" + self.robot_name + "/degrees_of_freedom", 6)
             self.is_gripper_present = rospy.get_param("/" + self.robot_name + "/is_gripper_present", False)
 
@@ -73,7 +72,7 @@ class movTest:
             else:
                 time.sleep(0.01)
 
-    def example_clear_faults(self):
+    def clear_errs(self):
         try:
             self.clear_faults()
         except rospy.ServiceException:
@@ -84,7 +83,7 @@ class movTest:
             rospy.sleep(2.5)
             return True
 
-    def example_home_the_robot(self):
+    def home_the_robot(self):
         # The Home Action is used to home the robot. It cannot be deleted and is always ID #2:
         req = ReadActionRequest()
         req.input.identifier = self.HOME_ACTION_IDENTIFIER
@@ -108,14 +107,14 @@ class movTest:
             else:
                 return self.wait_for_action_end_or_abort()
 
-    def example_set_cartesian_reference_frame(self):
+    def setReferenceToCartesian(self):
         # Prepare the request with the frame we want to set
         req = SetCartesianReferenceFrameRequest()
         req.input.reference_frame = CartesianReferenceFrame.CARTESIAN_REFERENCE_FRAME_MIXED
 
         # Call the service
         try:
-            self.set_cartesian_reference_frame(req)
+            self.set_cartesian_reference_frame()
         except rospy.ServiceException:
             rospy.logerr("Failed to call SetCartesianReferenceFrame")
             return False
@@ -127,7 +126,7 @@ class movTest:
         rospy.sleep(0.25)
 
 
-    def example_subscribe_to_a_robot_notification(self):
+    def subscribeRobotNotification(self):
         # Activate the publishing of the ActionNotification
         req = OnNotificationActionTopicRequest()
         rospy.loginfo("Activating the action notifications...")
@@ -171,10 +170,110 @@ class movTest:
             return True
 
 
-    def main(self):
+
+    def movToPos(self, poseId, waypoint):
+        print(waypoint)
+        (px, py, pz, tx, ty, tz, gripperVal) = waypoint
+
+        if(((px**2) + (py**2) + (pz**2))**0.5 >= 0.9):
+            print("Infeasible pose, skipping...")
+            return False
+
+        # POSITION DEFINITION
+        my_cartesian_speed = CartesianSpeed()
+        my_cartesian_speed.translation = 0.5 # m/s
+        my_cartesian_speed.orientation = 30  # deg/s, THIS IS UNAVAILABLE FOR REAL ARM BUT REQUIRED FOR SIM TO PREVENT IK ERROR.
+
+        my_constrained_pose = ConstrainedPose()
+        my_constrained_pose.constraint.oneof_type.speed.append(my_cartesian_speed)
+    
+        # actuate the gripper
+        self.actuate_gripper(gripperVal)
+        time.sleep(1) # awaits action complete notification
+
+        my_constrained_pose.target_pose.x = px
+        my_constrained_pose.target_pose.y = py
+        my_constrained_pose.target_pose.z = pz
+        my_constrained_pose.target_pose.theta_x = tx
+        my_constrained_pose.target_pose.theta_y = ty
+        my_constrained_pose.target_pose.theta_z = tz
+
+        req = ExecuteActionRequest()
+        req.input.oneof_action_parameters.reach_pose.append(my_constrained_pose)
+        req.input.name = "pose" + str(poseId)
+        req.input.handle.action_type = ActionType.REACH_POSE
+        req.input.handle.identifier = 1000 + poseId
+
+        rospy.loginfo("Sending pose " + str(poseId) + "...")
+        self.last_action_notif_type = None
+        try:
+            self.execute_action(req)
+        except rospy.ServiceException:
+            rospy.logerr("Failed to send pose "+str(poseId))
+            return False
+        else:
+            rospy.loginfo("Waiting for pose to finish...")
+
+        self.wait_for_action_end_or_abort()
+        time.sleep(1)   # hold before executing next subaction
+        return True
+
+
+
+    def startTask(self):
+        # POSITION DEFINITION
+        my_cartesian_speed = CartesianSpeed()
+        my_cartesian_speed.translation = 0.5    # m/s
+        my_cartesian_speed.orientation = 15     # deg/s, THIS IS UNAVAILABLE FOR REAL ARM BUT REQUIRED FOR SIM TO PREVENT IK ERROR.
+
+        gripperVal = 0
+        poseId = 1
+        try:
+            # DEFINITION of waypoints: subaction[ (x, y, z, tx, ty, tz, gripper), ... ]
+            waypoints = [
+                (0.4, -0.3, 0.16, 90, 0, 90, 0.3),	#reach cup
+                (0.4, -0.3, 0.05, 90, 0, 90, 0.65),	#pull cup down
+                (0.0, -0.3, 0.05, 90, 0, 90, 0.65),	#pull out of dispenser
+                # (0.1, -0.2, 0.5, 90, 0, 90, 0.65),	
+                (0.6, 0, 0.4, 90, 0, 90, 0.65),		#neutral pos
+                (0.5, 0, 0.04, 90, 0, 90, 0.65),	#goto place pos
+                (0.4, 0, 0.4, 90, 0, 90, 0),		#release & move out
+                (0.2, -0.2, 0.05, 90, 0, 90, 0.5),	#rest
+            ]
+            
+            numOfWaypoints = len(waypoints)
+            i = 0
+
+            while i < numOfWaypoints:
+                # --- ENABLE FOR MANUALLY STEPPING WAYPOINTS ---
+                # uinp = input('\nNext Step[enter], "quit", "prev": ').lower();
+                # if uinp == 'quit':
+                #     return False
+                # elif uinp == 'prev':
+                #     if i == 0:
+                #         print('\t> no prev step')
+                #         continue
+
+                #     i -= 2
+                #     print('---prev step---')
+                if(self.movToPos(poseId, waypoints[i]) == False):
+                    print("\nAction failed for some reason at waypoint: " + str(i) + "\n")
+                    return False
+                
+                poseId += 1
+                i += 1
+
+        except KeyboardInterrupt:
+            print('Terminating...')
+            return False
+        return True
+    
+
+
+    def init(self, cmdMode = False):
         # For testing purposes
         success = self.is_init_success
-        result_topic = "/kinova_rishik_results/movtest"
+        result_topic = "/kinova_rishik_results/pickPlaceTask"
 
         try:
             rospy.delete_param(result_topic)
@@ -182,92 +281,31 @@ class movTest:
             pass
 
         if success:
-            success &= self.example_clear_faults()
-            success &= self.example_home_the_robot()
-            success &= self.example_set_cartesian_reference_frame()
-            success &= self.example_subscribe_to_a_robot_notification()
-
-            # POSITION DEFINITION
-            my_cartesian_speed = CartesianSpeed()
-            my_cartesian_speed.translation = 0.2 # m/s
-            my_cartesian_speed.orientation = 15  # deg/s
-
-            my_constrained_pose = ConstrainedPose()
-            my_constrained_pose.constraint.oneof_type.speed.append(my_cartesian_speed)
-
-            lastGripperVal = 0
-
-            poseId = 1
-            try:
-                while True:
-                    shouldQuit = input("Next[enter] / type 'quit' to end, or 'home': ").lower()
-                    if(shouldQuit == 'quit'):
-                        break
-                    elif(shouldQuit == 'home'):
-                        self.example_home_the_robot()
-                        continue
-                    elif(shouldQuit != ''):
-                        continue
-
-                    px = float(input("\npose X ("+ str(my_constrained_pose.target_pose.x) +"): ") or my_constrained_pose.target_pose.x)
-                    py = float(input("pose Y ("+ str(my_constrained_pose.target_pose.y) +"): ") or my_constrained_pose.target_pose.y)
-                    pz = float(input("pose Z ("+ str(my_constrained_pose.target_pose.z) +"): ") or my_constrained_pose.target_pose.z)
-
-                    tx = float(input("theta X ("+ str(my_constrained_pose.target_pose.theta_x) +"): ") or my_constrained_pose.target_pose.theta_x)
-                    ty = float(input("theta Y ("+ str(my_constrained_pose.target_pose.theta_y) +"): ") or my_constrained_pose.target_pose.theta_y)
-                    tz = float(input("theta Z ("+ str(my_constrained_pose.target_pose.theta_z) +"): ") or my_constrained_pose.target_pose.theta_z)
-
-                    gripperVal = float(input("\nGripper [0-open] ("+ str(lastGripperVal) +"): ") or lastGripperVal)
-
-                    if(((px**2) + (py**2) + (pz**2))**0.5 >= 0.9):
-                        print("Infeasible pose, try again")
-                        continue
-                    
-                    # actuate the gripper
-                    self.actuate_gripper(gripperVal)
-                    lastGripperVal = gripperVal
-                    time.sleep(1) # awaits action complete notification
-
-                    my_constrained_pose.target_pose.x = px
-                    my_constrained_pose.target_pose.y = py
-                    my_constrained_pose.target_pose.z = pz
-                    my_constrained_pose.target_pose.theta_x = tx     # 0deg - points down
-                    my_constrained_pose.target_pose.theta_y = ty   # 180deg - camera is outward and straight
-                    my_constrained_pose.target_pose.theta_z = tz     # 0deg - points toward +ve y-axis
-
-                    req = ExecuteActionRequest()
-                    req.input.oneof_action_parameters.reach_pose.append(my_constrained_pose)
-                    req.input.name = "pose" + str(poseId)
-                    req.input.handle.action_type = ActionType.REACH_POSE
-                    req.input.handle.identifier = 1000 + poseId
-
-                    rospy.loginfo("Sending pose " + str(poseId) + "...")
-                    self.last_action_notif_type = None
-                    try:
-                        self.execute_action(req)
-                    except rospy.ServiceException:
-                        rospy.logerr("Failed to send pose "+str(poseId))
-                        success = False
-                    else:
-                        rospy.loginfo("Waiting for pose to finish...")
-
-                    self.wait_for_action_end_or_abort()
-
-                    success &= self.all_notifs_succeeded
-                    success &= self.all_notifs_succeeded
-                    poseId += 1
-
-            except KeyboardInterrupt:
-                print('Terminating...')
-                pass
-
-
-        # For testing purposes
-        # rospy.set_param(result_topic, success)
+            success &= self.clear_errs()
+            success &= self.home_the_robot()
+            success &= self.setReferenceToCartesian()
+            success &= self.subscribeRobotNotification()
+            success &= self.movToPos(-2, (0.0, -0.3, 0.5, 90, 0, 90, 0))    #neutral pos
+            success &= self.movToPos(-1, (0.2, -0.2, 0.05, 90, 0, 90, 0.5))	#rest
 
         if not success:
             rospy.logerr("The program encountered an error.")
+            return False
+        
+        while cmdMode:
+            uinp = input("\nStart action[enter] / type 'quit' to end: ").lower().strip()
+            if(uinp == 'quit'):
+                print("Quitting...")
+                break
+            elif(uinp != ''):
+                continue
+            
+            if(not ex.startTask()):
+                break
+        return None
+
+
 
 if __name__ == "__main__":
     ex = movTest()
-    ex.main()
+    ex.init(cmdMode=True)
