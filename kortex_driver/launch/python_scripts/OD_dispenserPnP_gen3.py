@@ -5,10 +5,11 @@ import time
 from kortex_driver.srv import *
 from kortex_driver.msg import *
 
-class movTest:
-    def __init__(self):
+class Gen3_dispenserPnP:
+    def __init__(self, cmdMode = False):
         try:
-            rospy.init_node('kinova_rishik')
+            if(cmdMode):
+                rospy.init_node('od_pnp_demo')
 
             self.HOME_ACTION_IDENTIFIER = 2
 
@@ -60,26 +61,30 @@ class movTest:
         # DEFINITION of waypoints: subaction[ (x, y, z, tx, ty, tz, gripper), ... ]
         self.WAYPOINTS = {
             'neutral': [
-                (0.6, 0.1, 0.3, 180, 270, 45, 0.7)
+                (0.5, -0.04, 0.07, 180, 270, 45, 0.7)
             ],
             # 'lookdown': [
             #     (0.3, 0, 0.3, 180, 0, 0, 0)
             # ],
             'kitkat': [
-                (0.51, 0.15, 0.12, 180, 270, 90, 0.5),  # x-z align to kitkat dispenser
-                (0.51, 0.23, 0.12, 180, 270, 90, 0.5),  # x-y align
-                (0.51, 0.15, 0.2, 180, 270, 45, 0.9),   # lift out
-                # (0.4, 0, 0.2, 180, 270, 45, 0.9),       # x-z align move out
-                (0.8, 0, 0.12, 90, 0, 90, 0.9),         # x-y align to cup
-                # (0.8, 0, 0.2, 90, 0, 90, 0.5),          # release and move up
+                # (0.5, 0.15, 0.12, 180, 270, 90, 0.5),   # x-z align to kitkat dispenser
+                (0.5, 0.21, 0.12, 180, 270, 90, 0.5),   # x-y align
+                (0.6, 0, 0.3, 180, 270, 45, 0.9),       # lift out
+                (0.82, 0, 0.1, 90, 0, 90, 0.9),         # x-y align to cup
+                (0.8, 0, 0.2, 90, 0, 90, 0.5),          # move out
             ],
             'cookie': [
                 (0.64, 0.15, 0.12, 180, 270, 90, 0.5),  # x-z align to cookie dispenser
                 (0.64, 0.23, 0.12, 180, 270, 90, 0.5),  # x-y align
-                (0.64, 0.15, 0.2, 180, 270, 45, 0.85),  # lift out
-                # (0.64, 0.15, 0.2, 180, 270, 45, 0.85),      # x-z align move out
-                (0.8, 0, 0.12, 90, 0, 90, 0.85),        # x-y align to cup
-                # (0.8, 0, 0.2, 90, 0, 90, 0.5),          # release and move up
+                (0.64, 0, 0.3, 90, 0, 90, 0.85),        # lift out
+                (0.8, 0, 0.1, 90, 0, 90, 0.85),         # x-y align to cup
+                (0.8, 0, 0.2, 90, 0, 90, 0.5),          # move out
+            ],
+            'slideCup': [
+                (0.8, 0.06, 0.2, 90, 0, 90, 1),         # go on side of cup
+                (0.8, 0.06, 0.03, 90, 0, 90, 1),        # lower on side of cup
+                (0.8, -0.28, 0.03, 90, 0, 90, 1),       # push cup to front edge
+                (0.8, -0.2, 0.03, 90, 0, 90, 1)         # move gripper back
             ]
         }
 
@@ -209,8 +214,8 @@ class movTest:
 
         # POSITION DEFINITION
         my_cartesian_speed = CartesianSpeed()
-        my_cartesian_speed.translation = 0.2 # m/s
-        my_cartesian_speed.orientation = 10  # deg/s, THIS IS UNAVAILABLE FOR REAL ARM BUT REQUIRED FOR SIM TO PREVENT IK ERROR.
+        my_cartesian_speed.translation = 0.5 # m/s
+        my_cartesian_speed.orientation = 60  # deg/s, THIS IS UNAVAILABLE FOR REAL ARM BUT REQUIRED FOR SIM TO PREVENT IK ERROR.
 
         my_constrained_pose = ConstrainedPose()
         my_constrained_pose.constraint.oneof_type.speed.append(my_cartesian_speed)
@@ -258,6 +263,7 @@ class movTest:
             if numOfCookie > 0:
                 subtasks.append('cookie')
                 numOfCookie -= 1
+        subtasks.append('slideCup')
         subtasks.append('neutral')  # always last is 'neutral'
 
         print("---\nExecuting sequentially the following subtasks:")
@@ -313,7 +319,7 @@ class movTest:
         
         if success:
             success &= self.clear_errs()
-            success &= self.home_the_robot()
+            # success &= self.home_the_robot()
             success &= self.setReferenceToCartesian()
             success &= self.subscribeRobotNotification()
             success &= self.movToPos(-1, self.WAYPOINTS['neutral'][0])
@@ -348,5 +354,5 @@ class movTest:
 
 if __name__ == "__main__":
     print('Note: Launched from command line')
-    ex = movTest()
+    ex = Gen3_dispenserPnP(cmdMode=True)
     ex.init(cmdMode=True)

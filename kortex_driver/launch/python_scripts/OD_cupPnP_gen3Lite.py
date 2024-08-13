@@ -5,10 +5,14 @@ import time
 from kortex_driver.srv import *
 from kortex_driver.msg import *
 
-class movTest:
-    def __init__(self):
+class Gen3Lite_cupPnP:
+    def __init__(self, cmdMode = False):
+        self.POS_NEUTRAL = (0.2, -0.3, 0.4, 90, 0, 90, 0)
+        self.POS_REST = (0.2, -0.25, 0.04, 90, 0, 90, 0.5)
+
         try:
-            rospy.init_node('kinova_rishik')
+            if(cmdMode):
+                rospy.init_node('od_pnp_demo')
 
             self.HOME_ACTION_IDENTIFIER = 2
 
@@ -20,7 +24,7 @@ class movTest:
             # Get node params
             self.robot_name = rospy.get_param('~robot_name', "my_gen3_lite")
             self.degrees_of_freedom = rospy.get_param("/" + self.robot_name + "/degrees_of_freedom", 6)
-            self.is_gripper_present = rospy.get_param("/" + self.robot_name + "/is_gripper_present", False)
+            # self.is_gripper_present = rospy.get_param("/" + self.robot_name + "/is_gripper_present", False)
 
             rospy.loginfo("Using robot_name " + self.robot_name)
 
@@ -147,9 +151,9 @@ class movTest:
         # Initialize the request
         # Close the gripper
 
-        if(not self.is_gripper_present):
-           print("Gripper not detected!")
-           return False
+        # if(not self.is_gripper_present):
+        #    print("Gripper not detected!")
+        #    return False
 
         req = SendGripperCommandRequest()
         finger = Finger()
@@ -224,21 +228,21 @@ class movTest:
         # POSITION DEFINITION
         my_cartesian_speed = CartesianSpeed()
         my_cartesian_speed.translation = 0.5    # m/s
-        my_cartesian_speed.orientation = 15     # deg/s, THIS IS UNAVAILABLE FOR REAL ARM BUT REQUIRED FOR SIM TO PREVENT IK ERROR.
+        my_cartesian_speed.orientation = 30     # deg/s, THIS IS UNAVAILABLE FOR REAL ARM BUT REQUIRED FOR SIM TO PREVENT IK ERROR.
 
         gripperVal = 0
         poseId = 1
         try:
             # DEFINITION of waypoints: subaction[ (x, y, z, tx, ty, tz, gripper), ... ]
             waypoints = [
-                (0.4, -0.3, 0.16, 90, 0, 90, 0.3),	#reach cup
-                (0.4, -0.3, 0.05, 90, 0, 90, 0.65),	#pull cup down
-                (0.0, -0.3, 0.05, 90, 0, 90, 0.65),	#pull out of dispenser
-                # (0.1, -0.2, 0.5, 90, 0, 90, 0.65),	
-                (0.6, 0, 0.4, 90, 0, 90, 0.65),		#neutral pos
-                (0.5, 0, 0.04, 90, 0, 90, 0.65),	#goto place pos
-                (0.4, 0, 0.4, 90, 0, 90, 0),		#release & move out
-                (0.2, -0.2, 0.05, 90, 0, 90, 0.5),	#rest
+                (0.4, -0.3, 0.13, 90, 0, 90, 0.4),	    #reach cup
+                (0.4, -0.3, 0.03, 90, 0, 90, 0.65),	    #pull cup down
+                (0.3, -0.3, 0.05, 90, 0, 90, 0.65),	    #pull out of dispenser
+                (0.2, -0.2, 0.3, 90, 0, 90, 0.65),	    #rise out
+                (0.53, -0.03, 0.3, 90, 0, 90, 0.65),	#x-y align place pos
+                (0.53, -0.03, 0, 90, 0, 90, 0.65),      #lower at place pos
+                (0.4, 0, 0.3, 90, 0, 90, 0),		    #release & move out
+                self.POS_REST
             ]
             
             numOfWaypoints = len(waypoints)
@@ -253,9 +257,9 @@ class movTest:
                 #     if i == 0:
                 #         print('\t> no prev step')
                 #         continue
-
                 #     i -= 2
                 #     print('---prev step---')
+
                 if(self.movToPos(poseId, waypoints[i]) == False):
                     print("\nAction failed for some reason at waypoint: " + str(i) + "\n")
                     return False
@@ -273,7 +277,7 @@ class movTest:
     def init(self, cmdMode = False):
         # For testing purposes
         success = self.is_init_success
-        result_topic = "/kinova_rishik_results/pickPlaceTask"
+        result_topic = "/kinovaLite_rishik_results/pickPlaceTask"
 
         try:
             rospy.delete_param(result_topic)
@@ -282,11 +286,11 @@ class movTest:
 
         if success:
             success &= self.clear_errs()
-            success &= self.home_the_robot()
+            # success &= self.home_the_robot()
             success &= self.setReferenceToCartesian()
             success &= self.subscribeRobotNotification()
-            success &= self.movToPos(-2, (0.0, -0.3, 0.5, 90, 0, 90, 0))    #neutral pos
-            success &= self.movToPos(-1, (0.2, -0.2, 0.05, 90, 0, 90, 0.5))	#rest
+            success &= self.movToPos(-2, self.POS_NEUTRAL)
+            success &= self.movToPos(-1, self.POS_REST)
 
         if not success:
             rospy.logerr("The program encountered an error.")
@@ -307,5 +311,5 @@ class movTest:
 
 
 if __name__ == "__main__":
-    ex = movTest()
+    ex = Gen3Lite_cupPnP(cmdMode=True)
     ex.init(cmdMode=True)
