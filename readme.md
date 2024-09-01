@@ -11,6 +11,7 @@ This is NOT OFFICIALLY maintained by Kinova Robotics as Ubuntu 18.04 and ROS Mel
 - RViz starts with pre-defined config.
 - Custom ROS-python control [scripts](kortex_driver/launch/python_scripts/) (for experimentation only).
 - Python TCP socket based [continuous data streamer](kortex_driver/launch/python_scripts/chunkedSender.py) and [on-req data streamer](kortex_driver/launch/python_scripts/chunkedSenderDelimited.py).
+- Dual arm control via ROS [demo](kortex_driver/launch/python_scripts/OD/)
 
 The modifications are to cater for personal research project and does not guarantee correct/stable working.
 
