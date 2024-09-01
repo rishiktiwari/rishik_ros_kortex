@@ -19,7 +19,7 @@ class movTest:
             self.all_notifs_succeeded = True
 
             # Get node params
-            self.robot_name = rospy.get_param('~robot_name', "my_gen3")
+            self.robot_name = rospy.get_param('~robot_name', "my_gen3_lite")
             self.degrees_of_freedom = rospy.get_param("/" + self.robot_name + "/degrees_of_freedom", 6)
             self.is_gripper_present = rospy.get_param("/" + self.robot_name + "/is_gripper_present", False)
 
@@ -183,7 +183,7 @@ class movTest:
 
         if success:
             success &= self.example_clear_faults()
-            success &= self.example_home_the_robot()
+            # success &= self.example_home_the_robot()
             success &= self.example_set_cartesian_reference_frame()
             success &= self.example_subscribe_to_a_robot_notification()
 

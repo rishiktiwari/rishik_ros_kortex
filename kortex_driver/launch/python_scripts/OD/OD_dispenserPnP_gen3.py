@@ -67,24 +67,25 @@ class Gen3_dispenserPnP:
             #     (0.3, 0, 0.3, 180, 0, 0, 0)
             # ],
             'kitkat': [
-                # (0.5, 0.15, 0.12, 180, 270, 90, 0.5),   # x-z align to kitkat dispenser
-                (0.5, 0.21, 0.12, 180, 270, 90, 0.5),   # x-y align
-                (0.6, 0, 0.3, 180, 270, 45, 0.9),       # lift out
-                (0.82, 0, 0.1, 90, 0, 90, 0.9),         # x-y align to cup
-                (0.8, 0, 0.2, 90, 0, 90, 0.5),          # move out
+                (0.5, 0.1, 0.12, 180, 270, 90, 0.5),      # x-z align to kitkat dispenser
+                (0.5, 0.22, 0.12, 180, 270, 90, 0.5),     # x-y align
+                (0.6, 0, 0.3, 180, 270, 45, 0.9),         # lift out
+                (0.81, -0.01, 0.1, 90, 0, 90, 0.9),       # x-y align to cup
+                (0.81, -0.01, 0.2, 90, 0, 90, 0.5),       # move out
             ],
             'cookie': [
-                (0.64, 0.15, 0.12, 180, 270, 90, 0.5),  # x-z align to cookie dispenser
-                (0.64, 0.23, 0.12, 180, 270, 90, 0.5),  # x-y align
-                (0.64, 0, 0.3, 90, 0, 90, 0.85),        # lift out
+                (0.65, 0.15, 0.12, 180, 270, 90, 0.5),  # x-z align to cookie dispenser
+                (0.65, 0.22, 0.12, 180, 270, 90, 0.5),  # x-y align
+                (0.65, 0.22, 0.2, 180, 270, 90, 0.85),  # lift out A
+                (0.65, 0, 0.3, 90, 0, 90, 0.85),        # lift out B
                 (0.8, 0, 0.1, 90, 0, 90, 0.85),         # x-y align to cup
                 (0.8, 0, 0.2, 90, 0, 90, 0.5),          # move out
             ],
             'slideCup': [
-                (0.8, 0.06, 0.2, 90, 0, 90, 1),         # go on side of cup
-                (0.8, 0.06, 0.03, 90, 0, 90, 1),        # lower on side of cup
-                (0.8, -0.28, 0.03, 90, 0, 90, 1),       # push cup to front edge
-                (0.8, -0.2, 0.03, 90, 0, 90, 1)         # move gripper back
+                (0.81, 0.07, 0.2, 90, 0, 90, 1),        # go on side of cup
+                (0.81, 0.07, 0.03, 90, 0, 90, 1),       # lower on side of cup
+                (0.81, -0.28, 0.03, 90, 0, 90, 1),      # push cup to front edge
+                (0.81, -0.2, 0.03, 90, 0, 90, 1)        # move gripper back
             ]
         }
 

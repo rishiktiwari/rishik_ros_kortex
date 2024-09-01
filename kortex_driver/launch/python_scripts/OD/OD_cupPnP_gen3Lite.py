@@ -237,10 +237,10 @@ class Gen3Lite_cupPnP:
             waypoints = [
                 (0.4, -0.3, 0.13, 90, 0, 90, 0.4),	    #reach cup
                 (0.4, -0.3, 0.03, 90, 0, 90, 0.65),	    #pull cup down
-                (0.3, -0.3, 0.05, 90, 0, 90, 0.65),	    #pull out of dispenser
+                (0.3, -0.3, 0.04, 90, 0, 90, 0.65),	    #pull out of dispenser
                 (0.2, -0.2, 0.3, 90, 0, 90, 0.65),	    #rise out
-                (0.53, -0.03, 0.3, 90, 0, 90, 0.65),	#x-y align place pos
-                (0.53, -0.03, 0, 90, 0, 90, 0.65),      #lower at place pos
+                (0.52, -0.02, 0.3, 90, 0, 90, 0.65),	#x-y align place pos
+                (0.52, -0.02, 0, 90, 0, 90, 0.65),      #lower at place pos
                 (0.4, 0, 0.3, 90, 0, 90, 0),		    #release & move out
                 self.POS_REST
             ]
